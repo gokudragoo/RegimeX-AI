@@ -139,6 +139,8 @@ COINMARKETCAP_API_KEY=
 OPENAI_MODEL=gpt-4o-mini
 NEXT_PUBLIC_DEFAULT_CHAIN=bsc-testnet
 NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3001
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
 ```
 
 Environment details:
@@ -148,6 +150,7 @@ Environment details:
 - `OPENAI_MODEL` defaults to `gpt-4o-mini`.
 - `NEXT_PUBLIC_DEFAULT_CHAIN` supports `bsc-testnet` or `bsc-mainnet`.
 - `NEXT_PUBLIC_SITE_URL` is used for canonical metadata, sitemap, and robots output.
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` enable shared production rate limiting. Without them, RegimeX falls back to local in-memory rate limits for development and demos.
 
 Never commit `.env`. It is ignored by `.gitignore` and excluded from Vercel uploads by `.vercelignore`.
 
@@ -168,6 +171,11 @@ Configured Vercel environment variables for Production and Development:
 - `OPENAI_MODEL`
 - `NEXT_PUBLIC_DEFAULT_CHAIN`
 - `NEXT_PUBLIC_SITE_URL=https://regimex-ai.vercel.app`
+
+Optional production hardening variables:
+
+- `UPSTASH_REDIS_REST_URL`
+- `UPSTASH_REDIS_REST_TOKEN`
 
 Deploy production:
 
@@ -194,6 +202,11 @@ Install dependencies:
 ```bash
 corepack pnpm install
 ```
+
+Runtime pins:
+
+- Node.js `22.x`
+- pnpm `10.24.0`
 
 Run the app:
 
@@ -292,8 +305,11 @@ Rate limit: 20 requests per minute per client key.
 - CMC and OpenAI keys stay server-side.
 - Browser code calls local API routes only.
 - CMC responses use in-process TTL caching to reduce repeated paid API calls.
-- Public API routes have basic per-client rate limits and return `429` with `Retry-After`.
+- CMC and OpenAI upstream requests have explicit timeouts.
+- Public API routes have per-client rate limits and return `429` with `Retry-After`.
+- Rate limits use Upstash/Vercel KV REST when configured and fall back to in-memory buckets for local demos.
 - Vercel deployments exclude local `.env` files and use project environment variables.
+- Security headers are configured through `next.config.mjs`, including CSP, `X-Frame-Options`, `X-Content-Type-Options`, Referrer Policy, Permissions Policy, and HSTS.
 - Inputs are validated with Zod before strategy generation or backtesting.
 - Malformed JSON returns `400` with field-level issues.
 - OpenAI responses must parse as JSON before being marked `live`.
