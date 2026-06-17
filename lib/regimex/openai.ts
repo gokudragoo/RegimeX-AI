@@ -1,6 +1,9 @@
 import "server-only"
 
 import type { AiResearchNote, MarketPulse, MarketSnapshot, StrategySpec } from "./types"
+import { fetchWithTimeout } from "./http"
+
+const OPENAI_REQUEST_TIMEOUT_MS = 18_000
 
 type ChatCompletionResponse = {
   choices?: Array<{
@@ -52,7 +55,7 @@ export async function generateAiResearchNote(
   if (!key) return { ...fallbackNote(pulse, spec), aiStatus: "missing-key" }
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetchWithTimeout("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       cache: "no-store",
       headers: {
@@ -83,8 +86,9 @@ export async function generateAiResearchNote(
             }),
           },
         ],
+        max_tokens: 500,
       }),
-    })
+    }, OPENAI_REQUEST_TIMEOUT_MS, "OpenAI")
 
     if (!response.ok) return fallbackNote(pulse, spec)
 
