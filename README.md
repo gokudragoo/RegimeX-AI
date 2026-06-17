@@ -329,6 +329,7 @@ Rate limit: 20 requests per minute per client key.
 
 ## Project Files
 
+- `SKILL.md` contains the judge-facing Strategy Skill contract.
 - `project.md` contains the original product planning notes.
 - `lib/regimex/strategy.ts` contains regime analysis, strategy generation, proof hash creation, and backtest rule logic.
 - `lib/regimex/cmc.ts` contains CMC API access and response caching.

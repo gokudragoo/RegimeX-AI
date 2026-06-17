@@ -23,6 +23,19 @@ Use this skill when a user asks:
 
 This skill generates research and backtesting artifacts only. It does not custody funds, request trading permissions, or execute live trades.
 
+## Agent Instructions
+
+When this skill is invoked:
+
+1. Treat CoinMarketCap data as the source of truth.
+2. Never invent unavailable market signals.
+3. Always state whether data is `live`, `derived`, or `missing`.
+4. Generate exactly one selected strategy family for the current regime.
+5. Include machine-readable backtest rules in the output.
+6. Include a reproducible proof hash contract.
+7. Keep live trade execution out of scope.
+8. If CMC historical data is unavailable, return a labeled proxy result instead of pretending a full historical backtest ran.
+
 ## Required Inputs
 
 ```json
@@ -111,6 +124,57 @@ The skill returns a JSON strategy spec with:
 - `proof.specHash`
 - `noLiveExecutionNotice`
 
+Expected JSON shape:
+
+```json
+{
+  "specVersion": "regimex-strategy-spec/v1",
+  "id": "rx-...",
+  "strategyFingerprint": "rx-...",
+  "title": "Volatility Breakout for BNB in Volatile rotation",
+  "track": "Track 2 - Strategy Skills",
+  "generatedAt": "2026-06-17T00:00:00.000Z",
+  "dataSource": "CoinMarketCap Pro API live response",
+  "targetAsset": "BNB",
+  "horizon": "30d",
+  "universe": ["BNB", "BTC", "ETH"],
+  "regime": "Volatile rotation",
+  "confidence": 86,
+  "strategy": "Volatility Breakout",
+  "riskMode": "balanced",
+  "thesis": "The market is rotating fast, so the skill waits for confirmed range expansion.",
+  "signalCoverage": [
+    {
+      "name": "Market quotes",
+      "source": "/v1/cryptocurrency/listings/latest",
+      "status": "live",
+      "detail": "40 liquid assets available for breadth, trend, volume, and liquidity scoring."
+    }
+  ],
+  "entryRules": ["Enter only after a breakout candle confirms above the recent range with positive volume change."],
+  "exitRules": ["Exit if breakout fails back into the prior range."],
+  "riskRules": ["Risk per signal capped at 1.0% of portfolio NAV."],
+  "backtestRules": {
+    "engine": "regimex-daily-close-v1",
+    "evaluationInterval": "1d",
+    "priceSource": "CMC historical quote close",
+    "indicators": ["dailyReturn", "sma7"],
+    "entryLogic": ["Enter full exposure only when absolute daily return exceeds 2.5% and price closes above the 7-day SMA."],
+    "exitLogic": ["Exit when the breakout condition is not confirmed."],
+    "positionSizing": ["Use 100% test allocation only on confirmed breakout days.", "Use 0% allocation otherwise."]
+  },
+  "backtestPlan": ["Replay CMC historical quotes without look-ahead."],
+  "cmcEndpoints": ["/v1/cryptocurrency/listings/latest"],
+  "bnbChainUse": ["Strategy spec hash can be anchored on BNB Smart Chain using the connected wallet."],
+  "proof": {
+    "hashAlgorithm": "SHA-256",
+    "canonicalization": "stable-json-v1 excluding proof.specHash",
+    "specHash": "0x0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "noLiveExecutionNotice": "Track 2 deliverable: backtestable strategy spec only. No autonomous live trading is triggered by RegimeX AI."
+}
+```
+
 ## Backtest Rule Engine
 
 Engine: `regimex-daily-close-v1`
@@ -151,6 +215,15 @@ Proof flow:
 - `GET /api/market`: returns CMC source status, assets, global metrics, Fear & Greed, DEX networks, gainers, and losers.
 - `POST /api/strategy`: validates inputs, builds market pulse, emits strategy spec, and returns an AI research note.
 - `POST /api/backtest`: validates inputs, tries historical CMC replay, and falls back to a labeled quote-window proxy.
+
+## Failure Behavior
+
+- Missing CMC key: return `source.status = "missing-key"` and an empty market snapshot.
+- Partial CMC outage: return available assets with `source.status = "partial"` and list source errors.
+- OpenAI unavailable: return deterministic fallback reasoning grounded in computed market signals.
+- Historical endpoint unavailable: return `mode = "quote-proxy"` with notes explaining that the result is derived from CMC quote windows.
+- Invalid user input: reject with field-level validation issues.
+- Rate limit exceeded: reject with `429`, `Retry-After`, and rate-limit headers.
 
 ## Safety Constraints
 
