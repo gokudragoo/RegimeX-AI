@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server"
 import { getHistoricalPrices, getMarketSnapshot } from "@/lib/regimex/cmc"
-import { rateLimitRequest } from "@/lib/regimex/rate-limit"
+import { rateLimitHeaders, rateLimitRequest } from "@/lib/regimex/rate-limit"
 import { analyzeMarket, runHistoricalBacktest, runQuoteProxyBacktest } from "@/lib/regimex/strategy"
 import { parseBacktestRequest, validationIssues } from "@/lib/regimex/validation"
 
 export const dynamic = "force-dynamic"
 
 export async function POST(request: Request) {
-  const limit = rateLimitRequest(request, "backtest", { limit: 20, windowMs: 60_000 })
+  const limit = await rateLimitRequest(request, "backtest", { limit: 20, windowMs: 60_000 })
   if (!limit.allowed) {
     return NextResponse.json(
       { error: "Too many backtest requests", retryAfterSeconds: limit.retryAfterSeconds },
-      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+      {
+        status: 429,
+        headers: { ...rateLimitHeaders(limit), "Retry-After": String(limit.retryAfterSeconds) },
+      },
     )
   }
 
@@ -35,11 +38,11 @@ export async function POST(request: Request) {
   try {
     const prices = await getHistoricalPrices(symbol, periodDays)
     const result = runHistoricalBacktest(prices, strategy, symbol, periodDays)
-    if (result.mode === "historical") return NextResponse.json({ result, snapshot, pulse })
+    if (result.mode === "historical") return NextResponse.json({ result, snapshot, pulse }, { headers: rateLimitHeaders(limit) })
   } catch {
     // The fallback below is intentionally derived from live CMC quote windows.
   }
 
   const result = runQuoteProxyBacktest(snapshot, strategy, symbol, periodDays)
-  return NextResponse.json({ result, snapshot, pulse })
+  return NextResponse.json({ result, snapshot, pulse }, { headers: rateLimitHeaders(limit) })
 }
