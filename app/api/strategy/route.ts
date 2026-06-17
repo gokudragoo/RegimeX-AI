@@ -1,18 +1,21 @@
 import { NextResponse } from "next/server"
 import { getMarketSnapshot } from "@/lib/regimex/cmc"
 import { generateAiResearchNote } from "@/lib/regimex/openai"
-import { rateLimitRequest } from "@/lib/regimex/rate-limit"
+import { rateLimitHeaders, rateLimitRequest } from "@/lib/regimex/rate-limit"
 import { analyzeMarket, buildStrategySpec } from "@/lib/regimex/strategy"
 import { parseStrategyRequest, validationIssues } from "@/lib/regimex/validation"
 
 export const dynamic = "force-dynamic"
 
 export async function POST(request: Request) {
-  const limit = rateLimitRequest(request, "strategy", { limit: 12, windowMs: 60_000 })
+  const limit = await rateLimitRequest(request, "strategy", { limit: 12, windowMs: 60_000 })
   if (!limit.allowed) {
     return NextResponse.json(
       { error: "Too many strategy requests", retryAfterSeconds: limit.retryAfterSeconds },
-      { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
+      {
+        status: 429,
+        headers: { ...rateLimitHeaders(limit), "Retry-After": String(limit.retryAfterSeconds) },
+      },
     )
   }
 
@@ -38,5 +41,5 @@ export async function POST(request: Request) {
     pulse,
     spec,
     researchNote,
-  })
+  }, { headers: rateLimitHeaders(limit) })
 }
