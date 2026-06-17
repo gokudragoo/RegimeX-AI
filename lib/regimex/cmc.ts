@@ -8,10 +8,13 @@ import type {
   MarketSnapshot,
   SourceError,
 } from "./types"
+import { fetchWithTimeout } from "./http"
 
 const CMC_BASE_URL = "https://pro-api.coinmarketcap.com"
 const MARKET_CACHE_TTL_MS = 60_000
 const HISTORICAL_CACHE_TTL_MS = 10 * 60_000
+const MARKET_REQUEST_TIMEOUT_MS = 8_000
+const HISTORICAL_REQUEST_TIMEOUT_MS = 15_000
 const MAX_CACHE_ENTRIES = 80
 
 type CmcStatus = {
@@ -83,7 +86,7 @@ async function fetchCmc<T>(
     return cached.value as CmcEnvelope<T>
   }
 
-  const response = await fetch(url, {
+  const response = await fetchWithTimeout(url, {
     ...init,
     cache: "no-store",
     headers: {
@@ -91,7 +94,7 @@ async function fetchCmc<T>(
       "X-CMC_PRO_API_KEY": key,
       ...(init?.headers ?? {}),
     },
-  })
+  }, endpoint.includes("historical") ? HISTORICAL_REQUEST_TIMEOUT_MS : MARKET_REQUEST_TIMEOUT_MS, `CoinMarketCap ${endpoint}`)
 
   let body: CmcEnvelope<T> | undefined
   try {
