@@ -1,0 +1,48 @@
+/* Hallmark · macrostructure: Product OS · tone: quant editorial · anchor hue: bnb-gold */
+:root {
+  --color-paper: oklch(0.965 0.012 86);
+  --color-paper-soft: oklch(0.985 0.006 86);
+  --color-ink: oklch(0.15 0.015 76);
+  --color-ink-muted: oklch(0.43 0.018 76);
+  --color-ink-faint: oklch(0.66 0.014 76);
+  --color-rule: oklch(0.86 0.014 86);
+  --color-panel: oklch(0.992 0.004 86 / 0.78);
+  --color-panel-strong: oklch(0.975 0.012 86 / 0.92);
+  --color-accent: oklch(0.75 0.16 86);
+  --color-accent-ink: oklch(0.21 0.045 78);
+  --color-positive: oklch(0.62 0.16 154);
+  --color-warning: oklch(0.72 0.17 78);
+  --color-negative: oklch(0.58 0.19 28);
+  --font-body: var(--font-geist), system-ui, sans-serif;
+  --font-display: var(--font-ibm-plex-sans), var(--font-geist), system-ui, sans-serif;
+  --font-mono-ui: var(--font-geist-mono), ui-monospace, monospace;
+  --font-pixel-ui: var(--font-courier-prime), ui-monospace, monospace;
+  --space-2xs: 0.25rem;
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 5rem;
+  --space-4xl: 8rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --text-3xl: 3rem;
+  --text-display: clamp(4rem, 11vw, 9rem);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+  --dur-fast: 160ms;
+  --dur-med: 360ms;
+  --dur-slow: 900ms;
+  --rule-thin: 1px;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+}

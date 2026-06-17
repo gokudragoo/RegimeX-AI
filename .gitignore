@@ -1,0 +1,23 @@
+# Builder sandbox internal files
+__v[0]_runtime_loader.js
+__v[0]_devtools.tsx
+__v[0]_jsx-dev-runtime.ts
+.snowflake/
+.v[0]-trash/
+.vercel/
+next.user-config.*
+
+# Environment variables
+.env
+.env.*
+!.env.example
+.env*.local
+
+# Common ignores
+node_modules
+.next/
+tsconfig.tsbuildinfo
+.DS_Store
+.vercel
+
+.vercel
